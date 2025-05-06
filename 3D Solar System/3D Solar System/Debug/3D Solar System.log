@@ -1,0 +1,5 @@
+﻿  3D Solar System.cpp
+SOIL.lib(image_DXT.obj) : warning LNK4099: PDB '' was not found with 'SOIL.lib(image_DXT.obj)' or at ''; linking object as if no debug info
+SOIL.lib(image_helper.obj) : warning LNK4099: PDB '' was not found with 'SOIL.lib(image_helper.obj)' or at ''; linking object as if no debug info
+SOIL.lib(stb_image_aug.obj) : warning LNK4099: PDB '' was not found with 'SOIL.lib(stb_image_aug.obj)' or at ''; linking object as if no debug info
+  3D Solar System.vcxproj -> B:\Akuma\Uni\2nd year\second semester\Graphics\Solar System\3D Solar System\Debug\3D Solar System.exe
