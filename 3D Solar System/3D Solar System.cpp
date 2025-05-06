@@ -1,4 +1,4 @@
-// Include necessary libraries
+// Include necessary header files
 #include <GL/glut.h>          // OpenGL Utility Toolkit for window management
 #include <SOIL.h>             // Simple OpenGL Image Library for texture loading
 #include <math.h>             // Math functions (sin, cos, etc.)
@@ -8,43 +8,43 @@
 #include <vector>             // STL vector container
 #include <ctime>              // Time functions for random seed
 
-// Define GL_CLAMP_TO_EDGE if not already defined (for texture wrapping)
+// Define GL_CLAMP_TO_EDGE if not already defined by the system
 #ifndef GL_CLAMP_TO_EDGE
 #define GL_CLAMP_TO_EDGE 0x812F
 #endif
 
-// Constants
-static const double PI = 3.14159;  // Pi constant for calculations
+// Constants for the solar system simulation
+static const double PI = 3.14159;  // Value of pi for calculations
 #define MAX_PLANETS 7              // Number of planets in our solar system
 
 // Structure to represent a star in the background
 struct Star {
-    float x, y, z;         // 3D position of the star
+    float x, y, z;         // 3D position coordinates
     float size;            // Visual size of the star
     float brightness;      // Base brightness level
     float flickerSpeed;    // Speed of brightness variation
 };
 
-// Structure to track camera state
+// Structure to track camera state and movement
 struct CameraState {
     float x, y, z;         // Camera position coordinates
     float tx, ty, tz;      // Camera target (look-at point)
     int targetPlanet;       // Index of planet being viewed (-1 for none)
-    bool isMoving;         // Flag for camera movement state
+    bool isMoving;         // Flag indicating if camera is moving
 } camera = { 0, 15, 60, 0, 5, 0, -1, false }; // Initialize camera with default values
 
-// Structure for planet information (name and facts)
+// Structure to hold planet information
 struct PlanetInfo {
     const char* name;       // Planet name
     const char* facts[3];   // Array of 3 facts about the planet
 };
 
-// Global variables for planet animation
+// Global variables for planet animation states
 static double orbitAngles[MAX_PLANETS] = { 0 };  // Current orbit angles for planets
 static double spinAngles[MAX_PLANETS] = { 0 };   // Current rotation angles for planets
 static float saturnRingAngle = 0.0f;             // Rotation angle for Saturn's rings
 
-// Texture handles and filenames
+// Texture handling variables
 static GLuint textures[MAX_PLANETS + 2];  // OpenGL texture IDs (planets + sun + background)
 static const char* textureFiles[MAX_PLANETS + 2] = {  // Texture filenames
     "Sun.jpg", "Mercury.jpg", "Venus.jpg", "Earth.jpg",
@@ -52,8 +52,8 @@ static const char* textureFiles[MAX_PLANETS + 2] = {  // Texture filenames
     "galaxy.jpg"
 };
 
-// Planet system parameters
-static const double planetDistances[] = { 6.0, 10.0, 14.0, 20.0, 30.0, 40.0, 50.0 };  // Orbital radii
+// Solar system configuration parameters
+static const double planetDistances[] = { 6.0, 10.0, 14.0, 20.0, 30.0, 40.0, 50.0 };  // Distance from sun
 static const double planetSizes[] = { 0.3, 0.6, 0.8, 1.0, 1.8, 1.5, 1.2 };            // Relative sizes
 static const double orbitalPeriods[] = { 3.0, 6.0, 8.0, 12.0, 24.0, 30.0, 40.0 };     // Orbit speeds
 static const double rotationalPeriods[] = { 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0 };      // Rotation speeds
@@ -70,15 +70,15 @@ static const PlanetInfo planetInfo[MAX_PLANETS] = {
     {"Uranus", {"- Ice giant", "- Sideways rotation ", "- 27 moons"}}
 };
 
-// Light properties
+// Light properties for the sun
 static const GLfloat lightAmbient[] = { 0.1f, 0.1f, 0.1f, 1.0f };   // Ambient light
 static const GLfloat lightDiffuse[] = { 1.0f, 1.0f, 1.0f, 1.0f };   // Diffuse light
 static const GLfloat lightSpecular[] = { 1.0f, 1.0f, 1.0f, 1.0f };  // Specular light
 
-// Star container
-std::vector<Star> stars;  // Vector to hold star objects
+// Container for star objects
+std::vector<Star> stars;
 
-// Function to load textures from files
+// Function to load textures from image files
 void loadTextures() {
     glEnable(GL_TEXTURE_2D);  // Enable 2D texturing
     // Load each texture file
@@ -90,7 +90,7 @@ void loadTextures() {
             SOIL_CREATE_NEW_ID,       // Create new texture ID
             SOIL_FLAG_MIPMAPS | SOIL_FLAG_INVERT_Y  // Generate mipmaps and flip Y
         );
-        // Error checking
+        // Error checking for texture loading
         if (!textures[i]) {
             printf("Texture load failed: %s\n", SOIL_last_result());
             exit(EXIT_FAILURE);
@@ -110,12 +110,12 @@ void initStars(int count) {
     stars.resize(count);       // Resize vector to hold requested number of stars
     // Initialize each star with random properties
     for (int i = 0; i < count; ++i) {
-        // Random position in a large volume
+        // Random position in a large volume around the solar system
         stars[i].x = (rand() % 2000 - 1000) / 10.0f;
         stars[i].y = (rand() % 2000 - 1000) / 10.0f;
         stars[i].z = (rand() % 2000 - 1000) / 10.0f;
-        stars[i].size = (rand() % 5 + 1) / 10.0f;              // Random size
-        stars[i].brightness = (rand() % 50 + 50) / 100.0f;     // Random brightness
+        stars[i].size = (rand() % 5 + 1) / 10.0f;              // Random size between 0.1 and 0.6
+        stars[i].brightness = (rand() % 50 + 50) / 100.0f;     // Random brightness between 0.5 and 1.0
         stars[i].flickerSpeed = (rand() % 50 + 50) / 1000.0f;  // Random flicker speed
     }
 }
@@ -123,43 +123,41 @@ void initStars(int count) {
 // Initialize OpenGL settings
 void initGL() {
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);  // Set clear color to black
-    glEnable(GL_DEPTH_TEST);                // Enable depth testing
-    glEnable(GL_LIGHTING);                  // Enable lighting
-    glEnable(GL_LIGHT0);                    // Enable light source 0
-    glEnable(GL_NORMALIZE);                 // Enable automatic normalization
+    glEnable(GL_DEPTH_TEST);                // Enable depth testing for 3D rendering
+    glEnable(GL_LIGHTING);                  // Enable lighting calculations
+    glEnable(GL_LIGHT0);                    // Enable light source 0 (the sun)
+    glEnable(GL_NORMALIZE);                 // Enable automatic normal vector normalization
     glEnable(GL_LINE_SMOOTH);               // Enable line anti-aliasing
-    glEnable(GL_BLEND);                     // Enable blending
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  // Set blending function
 
-    // Set up light source properties
-    const GLfloat lightPosition[] = { 0.0f, 0.0f, 0.0f, 1.0f };  // Light at origin (sun)
-    glLightfv(GL_LIGHT0, GL_AMBIENT, lightAmbient);    // Set ambient light
-    glLightfv(GL_LIGHT0, GL_DIFFUSE, lightDiffuse);    // Set diffuse light
-    glLightfv(GL_LIGHT0, GL_SPECULAR, lightSpecular);  // Set specular light
+    // Set up light source properties (sun)
+    const GLfloat lightPosition[] = { 0.0f, 0.0f, 0.0f, 1.0f };  // Light positioned at origin
+    glLightfv(GL_LIGHT0, GL_AMBIENT, lightAmbient);    // Set ambient light properties
+    glLightfv(GL_LIGHT0, GL_DIFFUSE, lightDiffuse);    // Set diffuse light properties
+    glLightfv(GL_LIGHT0, GL_SPECULAR, lightSpecular);  // Set specular light properties
     glLightfv(GL_LIGHT0, GL_POSITION, lightPosition);  // Set light position
 
     // Enable color tracking for materials
     glEnable(GL_COLOR_MATERIAL);
     glColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE);
 
-    loadTextures();    // Load all textures
-    initStars(500);    // Initialize 500 stars
+    loadTextures();    // Load all planet and background textures
+    initStars(500);    // Initialize starfield with 500 stars
 }
 
 // Window resize handler
 void reshape(int w, int h) {
-    if (h == 0) h = 1;  // Prevent divide by zero
+    if (h == 0) h = 1;  // Prevent divide by zero when calculating aspect ratio
     glViewport(0, 0, w, h);  // Set viewport to cover entire window
-    glMatrixMode(GL_PROJECTION);  // Switch to projection matrix
+    glMatrixMode(GL_PROJECTION);  // Switch to projection matrix mode
     glLoadIdentity();             // Reset projection matrix
-    // Set up perspective projection
+    // Set up perspective projection with 75 degree FOV
     gluPerspective(75.0, (float)w / h, 0.1, 200.0);
-    glMatrixMode(GL_MODELVIEW);  // Switch back to modelview matrix
+    glMatrixMode(GL_MODELVIEW);  // Switch back to modelview matrix mode
 }
 
 // Function to draw text on screen
 void drawText(float x, float y, const char* text) {
-    // Switch to orthographic projection for 2D text
+    // Switch to orthographic projection for 2D text rendering
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
     glLoadIdentity();
@@ -170,7 +168,7 @@ void drawText(float x, float y, const char* text) {
     glLoadIdentity();
 
     glDisable(GL_LIGHTING);  // Disable lighting for text
-    glColor3f(1, 1, 1);     // White text
+    glColor3f(1, 1, 1);     // Set text color to white
     glRasterPos2f(x, y);     // Position text
 
     // Draw each character of the string
@@ -186,25 +184,25 @@ void drawText(float x, float y, const char* text) {
 
 // Draw information box for selected planet
 void drawInfoBox(int planetIndex) {
-    if (planetIndex < 0 || planetIndex >= MAX_PLANETS) return;  // Validate index
+    if (planetIndex < 0 || planetIndex >= MAX_PLANETS) return;  // Validate planet index
 
     const PlanetInfo& info = planetInfo[planetIndex];  // Get planet info
     const int lineCount = 4;  // Name + 3 facts
     const float lineHeight = 20.0f;
     const float padding = 15.0f;
 
-    // Get window dimensions
+    // Get current window dimensions
     int windowWidth = glutGet(GLUT_WINDOW_WIDTH);
     int windowHeight = glutGet(GLUT_WINDOW_HEIGHT);
 
-    // Calculate box dimensions
+    // Calculate box dimensions and position
     float boxWidth = 250.0f;
     float boxHeight = lineCount * lineHeight + padding * 2;
     float startX = 20.0f;
     float startY = windowHeight - 50.0f;
 
     // Draw background rectangle
-    glColor4f(0.1f, 0.1f, 0.2f, 0.7f);
+    glColor3f(0.1f, 0.1f, 0.2f);  // Dark blue-gray background
     glBegin(GL_QUADS);
     glVertex2f(startX, startY);
     glVertex2f(startX + boxWidth, startY);
@@ -212,9 +210,9 @@ void drawInfoBox(int planetIndex) {
     glVertex2f(startX, startY - boxHeight);
     glEnd();
 
-    // Draw border
+    // Draw border around the box
     glLineWidth(2.0f);
-    glColor4f(0.4f, 0.4f, 0.8f, 0.9f);
+    glColor3f(0.4f, 0.4f, 0.8f);  // Lighter blue border
     glBegin(GL_LINE_LOOP);
     glVertex2f(startX, startY);
     glVertex2f(startX + boxWidth, startY);
@@ -224,25 +222,25 @@ void drawInfoBox(int planetIndex) {
 
     // Draw planet name and facts
     float textY = startY - padding;
-    drawText(startX + padding, textY, info.name);
+    drawText(startX + padding, textY, info.name);  // Planet name
     textY -= lineHeight;
     for (int i = 0; i < 3; i++) {
-        drawText(startX + padding, textY, info.facts[i]);
+        drawText(startX + padding, textY, info.facts[i]);  // Each fact
         textY -= lineHeight;
     }
 
-    // Draw help text
+    // Draw help text at bottom
     drawText(startX + padding, textY - 10, "Press Q to return");
 }
 
 // Update camera position based on current target
 void updateCamera() {
     if (camera.targetPlanet != -1) {
-        // Camera is focused on a planet
+        // Camera is focused on a specific planet
         int idx = camera.targetPlanet;
         double angle = orbitAngles[idx];
         double distance = planetDistances[idx];
-        // Calculate planet position
+        // Calculate planet position in orbit
         double px = -distance * sin(angle);
         double pz = distance * cos(angle);
 
@@ -265,7 +263,7 @@ void updateCamera() {
         camera.y += (camera.ty - camera.y) * speed;
         camera.z += (camera.tz - camera.z) * speed;
 
-        // Check if camera reached target
+        // Check if camera reached target position
         if (fabs(camera.x - camera.tx) < 0.1f &&
             fabs(camera.y - camera.ty) < 0.1f &&
             fabs(camera.z - camera.tz) < 0.1f) {
@@ -321,7 +319,7 @@ void drawBackground() {
     glTexCoord2f(0, 0); glVertex2f(-1, 1);
     glEnd();
 
-    // Restore state
+    // Restore OpenGL state
     glDisable(GL_TEXTURE_2D);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_LIGHTING);
@@ -337,23 +335,16 @@ void drawStars() {
     static float time = 0.0f;  // Animation timer
     time += 0.01f;             // Increment timer
 
-    // Save current state
+    // Save current OpenGL state
     glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT);
     glDisable(GL_LIGHTING);     // Stars emit their own light
-    glEnable(GL_BLEND);         // Enable blending for transparency
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE);  // Additive blending for bright effect
 
-    // Draw each star
+    // Draw each star with flickering effect
     for (const auto& star : stars) {
-        // Calculate flickering effect using sine wave
         float flicker = 0.5f + 0.5f * sin(time * star.flickerSpeed);
-        float alpha = star.brightness * flicker;
+        glColor3f(1.0f, 1.0f, 1.0f);  // White stars
+        glPointSize(star.size * (1.0f + flicker * 0.5f));  // Size varies with flicker
 
-        // Set color and size with flicker effect
-        glColor4f(1.0f, 1.0f, 1.0f, alpha);
-        glPointSize(star.size * (1.0f + flicker * 0.5f));
-
-        // Draw star as a point
         glBegin(GL_POINTS);
         glVertex3f(star.x, star.y, star.z);
         glEnd();
@@ -361,27 +352,27 @@ void drawStars() {
 
     // Draw some brighter stars
     glPointSize(3.0f);
-    glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+    glColor3f(1.0f, 1.0f, 1.0f);
     glBegin(GL_POINTS);
     for (int i = 0; i < 20; i++) {
         glVertex3f(stars[i].x * 1.5f, stars[i].y * 1.5f, stars[i].z * 1.5f);
     }
     glEnd();
 
-    // Restore state
+    // Restore OpenGL state
     glPopAttrib();
 }
 
 // Draw a planet's orbit ring
 void drawOrbitRing(double radius) {
-    // Save current state
+    // Save current OpenGL state
     glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT);
     glDisable(GL_LIGHTING);      // Orbits don't need lighting
-    glColor4f(1.0f, 1.0f, 1.0f, 0.4f);  // Semi-transparent white
+    glColor3f(1.0f, 1.0f, 1.0f);  // White orbit rings
     glLineWidth(1.5f);           // Set line width
     glEnable(GL_LINE_SMOOTH);    // Anti-aliased lines
 
-    // Draw circle for orbit path
+    // Draw circular orbit path
     glBegin(GL_LINE_LOOP);
     for (int i = 0; i < 360; ++i) {
         double angle = 2 * PI * i / 360;
@@ -389,7 +380,7 @@ void drawOrbitRing(double radius) {
     }
     glEnd();
 
-    // Restore state
+    // Restore OpenGL state
     glPopAttrib();
 }
 
@@ -402,16 +393,16 @@ void drawSaturnRings(double size) {
 
     // Multiple layers for rings with different properties
     const int layers = 5;
-    const float colors[][4] = {
-        {0.9f, 0.85f, 0.7f, 0.6f}, {0.8f, 0.75f, 0.6f, 0.5f},
-        {0.7f, 0.6f, 0.5f, 0.4f}, {0.6f, 0.55f, 0.5f, 0.3f},
-        {0.5f, 0.45f, 0.4f, 0.2f}
+    const float colors[][3] = {
+        {0.9f, 0.85f, 0.7f}, {0.8f, 0.75f, 0.6f},
+        {0.7f, 0.6f, 0.5f}, {0.6f, 0.55f, 0.5f},
+        {0.5f, 0.45f, 0.4f}
     };
 
     // Draw each ring layer
     for (int i = 0; i < layers; ++i) {
         glPushMatrix();
-        glColor4fv(colors[i]);  // Set ring color
+        glColor3fv(colors[i]);  // Set ring color
         // Draw torus (donut shape) for ring
         glutSolidTorus(size * 0.02 * (i + 1), size * (2.5 + i * 0.4), 64, 128);
         glPopMatrix();
@@ -437,7 +428,7 @@ void drawTexturedSphere(GLuint tex, double rad, bool isSun = false) {
         glMaterialfv(GL_FRONT, GL_EMISSION, emit);  // Make sun glow
     }
 
-    // Draw the sphere
+    // Draw the sphere with texture
     gluSphere(quad, rad, 40, 40);
 
     // Reset emission if this was the sun
@@ -447,14 +438,14 @@ void drawTexturedSphere(GLuint tex, double rad, bool isSun = false) {
         glPopMatrix();
     }
 
-    // Clean up
+    // Clean up quadric object
     gluDeleteQuadric(quad);
     glDisable(GL_TEXTURE_2D);
 }
 
 // Draw a planet with its orbit and rotation
 void drawPlanet(double dist, double size, double orbitPeriod, double rotPeriod, int idx) {
-    if (idx >= MAX_PLANETS) return;  // Validate index
+    if (idx >= MAX_PLANETS) return;  // Validate planet index
 
     // Update orbital and rotational angles based on time
     double orbitSpeed = 2 * PI / orbitPeriod;
@@ -485,7 +476,6 @@ void drawPlanet(double dist, double size, double orbitPeriod, double rotPeriod, 
     if (hasVisibleRings[idx]) {
         glPushAttrib(GL_ENABLE_BIT);
         glDisable(GL_LIGHTING);
-        glEnable(GL_BLEND);
         drawSaturnRings(size);
         glPopAttrib();
     }
@@ -493,12 +483,12 @@ void drawPlanet(double dist, double size, double orbitPeriod, double rotPeriod, 
     glPopMatrix();
 }
 
-// Main display function
+// Main display function called by GLUT
 void display() {
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);  // Clear buffers
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);  // Clear color and depth buffers
     drawBackground();  // Draw background first
 
-    updateCamera();  // Update camera position
+    updateCamera();  // Update camera position based on current target
 
     // Set up view transformation
     glLoadIdentity();
@@ -506,8 +496,7 @@ void display() {
         camera.tx, camera.ty, camera.tz,    // Look-at point
         0.0, 1.0, 0.0);                     // Up vector
 
-    // Draw stars first (as background elements)
-    drawStars();
+    drawStars();  // Draw starfield
 
     // Draw Sun at center
     glPushMatrix();
@@ -526,7 +515,7 @@ void display() {
         drawInfoBox(camera.targetPlanet);
     }
 
-    glutSwapBuffers();  // Swap front and back buffers
+    glutSwapBuffers();  // Swap front and back buffers for smooth animation
 }
 
 // Timer callback for animation
@@ -539,25 +528,25 @@ void updateScene(int val) {
 void specialKeys(int key, int x, int y) {
     if (camera.targetPlanet == -1) {  // Only allow movement in default view
         switch (key) {
-        case GLUT_KEY_LEFT:  camera.x -= 0.5f; break;      // Move left
-        case GLUT_KEY_RIGHT: camera.x += 0.5f; break;     // Move right
-        case GLUT_KEY_UP:    camera.y -= 0.5f; break;       // Move up
-        case GLUT_KEY_DOWN:  camera.y += 0.5f; break;     // Move down
-        case GLUT_KEY_PAGE_UP:   camera.z -= 1.0f; break;  // Zoom in
-        case GLUT_KEY_PAGE_DOWN: camera.z += 1.0f; break; // Zoom out
+        case GLUT_KEY_LEFT:  camera.x -= 0.5f; break;      // Move camera left
+        case GLUT_KEY_RIGHT: camera.x += 0.5f; break;     // Move camera right
+        case GLUT_KEY_UP:    camera.y -= 0.5f; break;       // Move camera up
+        case GLUT_KEY_DOWN:  camera.y += 0.5f; break;     // Move camera down
+        case GLUT_KEY_PAGE_UP:   camera.z -= 1.0f; break;  // Zoom camera in
+        case GLUT_KEY_PAGE_DOWN: camera.z += 1.0f; break; // Zoom camera out
         }
-        // Clamp zoom distance
+        // Clamp zoom distance to reasonable limits
         camera.z = fmax(fmin(camera.z, 150.0f), 10.0f);
     }
 }
 
-// Main function
+// Main program entry point
 int main(int argc, char** argv) {
     // Initialize GLUT
     glutInit(&argc, argv);
     // Set up display mode with double buffering, depth buffer, RGB color, and multisampling
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_DEPTH | GLUT_RGB | GLUT_MULTISAMPLE);
-    glutInitWindowSize(1920, 1080);  // Set window size to HD
+    glutInitWindowSize(1920, 1080);  // Set window size to HD resolution
     glutCreateWindow("Solar System Viewer with Info Boxes");  // Create window
     glutFullScreen();  // Start in fullscreen mode
 
